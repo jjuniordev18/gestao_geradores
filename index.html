@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Sistema de gestão de geradores - Infratech Carajás">
+  <meta name="theme-color" content="#667eea">
+  <title>Gestão de Geradores — Infratech</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class'
+    }
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="manifest" href="manifest.json">
+</head>
+
+<body class="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 transition-colors duration-300">
+  <div id="loading" class="fixed inset-0 bg-white dark:bg-slate-900 z-50 flex items-center justify-center">
+    <div class="text-center">
+      <i class="fas fa-spinner fa-spin text-4xl text-primary-600 mb-4"></i>
+      <p class="text-slate-600 dark:text-slate-400">Carregando dados...</p>
+    </div>
+  </div>
+
+  <header class="sticky top-0 z-50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-lg border-b border-slate-200 dark:border-slate-800 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between items-center h-16">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl gradient-bg flex items-center justify-center text-white font-bold text-lg shadow-lg">
+            <i class="fas fa-bolt"></i>
+          </div>
+          <div>
+            <h1 class="text-xl font-bold bg-gradient-to-r from-primary-600 to-purple-600 bg-clip-text text-transparent">Gestão de Geradores</h1>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Infratech • Carajás-PA</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-3">
+          <span id="syncStatus" class="text-xs text-green-500 flex items-center gap-1">
+            <i class="fas fa-circle text-xs"></i> Sincronizado
+          </span>
+          <button onclick="toggleTheme()" class="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 transition-all">
+            <i class="fas fa-moon dark:hidden text-slate-600"></i>
+            <i class="fas fa-sun hidden dark:block text-yellow-400"></i>
+          </button>
+          <button id="adminBtn" onclick="toggleAdmin()" class="px-4 py-2 rounded-xl bg-primary-600 hover:bg-primary-700 text-white font-medium transition-all shadow-lg shadow-primary-600/30 flex items-center gap-2">
+            <i class="fas fa-lock"></i><span class="hidden sm:inline">Admin</span>
+          </button>
+          <button onclick="openModal()" class="px-4 py-2 rounded-xl bg-green-600 hover:bg-green-700 text-white font-medium transition-all shadow-lg shadow-green-600/30 flex items-center gap-2">
+            <i class="fas fa-plus"></i><span class="hidden sm:inline">Novo</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="mb-8 p-6 bg-white dark:bg-slate-900 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-800">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
+        <div>
+          <label class="block text-sm font-medium mb-2 text-slate-600 dark:text-slate-400">Status</label>
+          <select id="filterStatus" onchange="applyFilters()" class="w-full px-4 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 focus:ring-2 focus:ring-primary-500">
+            <option value="">Todos</option>
+            <option value="OPERACIONAL">OPERACIONAL</option>
+            <option value="INDISPONIVEL">INDISPONÍVEL</option>
+            <option value="N/A">N/A</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-2 text-slate-600 dark:text-slate-400">Automação</label>
+          <select id="filterAuto" onchange="applyFilters()" class="w-full px-4 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 focus:ring-2 focus:ring-primary-500">
+            <option value="">Todas</option>
+            <option value="OK">OK</option>
+            <option value="NOK">NOK</option>
+            <option value="N/A">N/A</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-2 text-slate-600 dark:text-slate-400">Fornecedor</label>
+          <select id="filterFornecedor" onchange="applyFilters()" class="w-full px-4 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 focus:ring-2 focus:ring-primary-500">
+            <option value="">Todos</option>
+            <option value="A GERADORA">A GERADORA</option>
+            <option value="ALCON">ALCON</option>
+            <option value="REDEL">REDEL</option>
+            <option value="VALE">VALE</option>
+            <option value="INFRATECH">INFRATECH</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-2 text-slate-600 dark:text-slate-400">Nível</label>
+          <select id="filterNivel" onchange="applyFilters()" class="w-full px-4 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 focus:ring-2 focus:ring-primary-500">
+            <option value="">Todos</option>
+            <option value="1/4">1/4</option>
+            <option value="2/4">2/4</option>
+            <option value="3/4">3/4</option>
+            <option value="Cheio">Cheio</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-2 text-slate-600 dark:text-slate-400">Buscar</label>
+          <input type="text" id="searchText" oninput="applyFilters()" placeholder="Local, TAG..." class="w-full px-4 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 focus:ring-2 focus:ring-primary-500">
+        </div>
+        <div class="flex items-end gap-2">
+          <button onclick="clearFilters()" class="flex-1 px-4 py-2 rounded-xl bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 transition-all font-medium">
+            <i class="fas fa-eraser mr-2"></i>Limpar
+          </button>
+          <button onclick="exportData()" class="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white transition-all" title="Exportar">
+            <i class="fas fa-download"></i>
+          </button>
+          <button onclick="document.getElementById('importFile').click()" class="px-4 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-600 text-white transition-all" title="Importar">
+            <i class="fas fa-upload"></i>
+          </button>
+          <input type="file" id="importFile" class="hidden" accept=".json" onchange="importData(event)">
+        </div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+      <div class="clickable-card bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 p-6 card-hover" onclick="filterByStatus('')">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Total de Geradores</p>
+            <h3 class="text-4xl font-bold text-slate-800 dark:text-white mt-2" id="totalCount">0</h3>
+          </div>
+          <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white shadow-lg">
+            <i class="fas fa-server text-2xl"></i>
+          </div>
+        </div>
+        <div class="h-24"><canvas id="totalChart"></canvas></div>
+      </div>
+      <div class="clickable-card bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 p-6 card-hover" onclick="filterByStatus('OPERACIONAL')">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Operacionais</p>
+            <h3 class="text-4xl font-bold text-emerald-600 dark:text-emerald-400 mt-2" id="operacionalCount">0</h3>
+            <p class="text-sm text-emerald-600 dark:text-emerald-400 mt-1" id="operacionalPercent">0%</p>
+          </div>
+          <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center text-white shadow-lg">
+            <i class="fas fa-check-circle text-2xl"></i>
+          </div>
+        </div>
+        <div class="h-24"><canvas id="operacionalChart"></canvas></div>
+      </div>
+      <div class="clickable-card bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 p-6 card-hover" onclick="filterByAuto('OK')">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Automação OK</p>
+            <h3 class="text-4xl font-bold text-purple-600 dark:text-purple-400 mt-2" id="autoOkCount">0</h3>
+            <p class="text-sm text-purple-600 dark:text-purple-400 mt-1" id="autoOkPercent">0%</p>
+          </div>
+          <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center text-white shadow-lg">
+            <i class="fas fa-robot text-2xl"></i>
+          </div>
+        </div>
+        <div class="h-24"><canvas id="autoChart"></canvas></div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+      <div class="bg-gradient-to-br from-orange-400 to-orange-500 rounded-2xl p-4 text-white shadow-lg">
+        <p class="text-sm opacity-90">Nível Médio</p>
+        <p class="text-2xl font-bold mt-1" id="nivelMedio">0%</p>
+      </div>
+      <div class="bg-gradient-to-br from-red-400 to-red-500 rounded-2xl p-4 text-white shadow-lg">
+        <p class="text-sm opacity-90">Indisponíveis</p>
+        <p class="text-2xl font-bold mt-1" id="indisponivelCount">0</p>
+      </div>
+      <div class="bg-gradient-to-br from-cyan-400 to-cyan-500 rounded-2xl p-4 text-white shadow-lg">
+        <p class="text-sm opacity-90">Torres</p>
+        <p class="text-2xl font-bold mt-1" id="torreCount">0</p>
+      </div>
+      <div class="bg-gradient-to-br from-pink-400 to-pink-500 rounded-2xl p-4 text-white shadow-lg">
+        <p class="text-sm opacity-90">Postes</p>
+        <p class="text-2xl font-bold mt-1" id="posteCount">0</p>
+      </div>
+    </div>
+
+    <div id="cardsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div>
+    <div id="emptyState" class="hidden text-center py-16">
+      <div class="w-24 h-24 mx-auto mb-4 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center">
+        <i class="fas fa-search text-4xl text-slate-400"></i>
+      </div>
+      <h3 class="text-xl font-semibold text-slate-600 dark:text-slate-400">Nenhum gerador encontrado</h3>
+    </div>
+  </main>
+
+  <!-- Edit Modal -->
+  <div id="editModal" class="hidden fixed inset-0 z-50 overflow-y-auto">
+    <div class="flex items-center justify-center min-h-screen px-4">
+      <div class="fixed inset-0 bg-slate-900/75 backdrop-blur-sm" onclick="closeModal()"></div>
+      <div class="relative bg-white dark:bg-slate-900 rounded-2xl shadow-2xl p-6 max-w-2xl w-full border border-slate-200 dark:border-slate-800">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-xl font-bold text-slate-800 dark:text-white">Editar Registro</h3>
+          <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600"><i class="fas fa-times text-xl"></i></button>
+        </div>
+        <form id="editForm" onsubmit="handleSaveRecord(event)" class="space-y-4">
+          <input type="hidden" id="editId">
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium mb-2">Tipo</label>
+              <select id="editTipo" class="w-full px-4 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
+                <option value="TORRE">TORRE</option>
+                <option value="POSTE">POSTE</option>
+                <option value="SKID">SKID</option>
+                <option value="CENTRAL">CENTRAL</option>
+                <option value="REPETIDORA">REPETIDORA</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-2">Local</label>
+              <input type="text" id="editLocal" class="w-full px-4 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800" required>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium mb-2">Endereço</label>
+              <input type="text" id="editEndereco" class="w-full px-4 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800" required>
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-2">TAG VALE</label>
+              <input type="text" id="editTagVale" class="w-full px-4 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium mb-2">TAG Fornecedor</label>
+              <input type="text" id="editTagFornecedor" class="w-full px-4 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-2">Chassi</label>
+              <input type="text" id="editChassi" class="w-full px-4 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
+            </div>
+          </div>
+          <div class="grid grid-cols-3 gap-4">
+            <div>
+              <label class="block text-sm font-medium mb-2">Status</label>
+              <select id="editStatus" class="w-full px-4 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
+                <option value="OPERACIONAL">OPERACIONAL</option>
+                <option value="INDISPONIVEL">INDISPONÍVEL</option>
+                <option value="N/A">N/A</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-2">Automação</label>
+              <select id="editAuto" class="w-full px-4 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
+                <option value="OK">OK</option>
+                <option value="NOK">NOK</option>
+                <option value="N/A">N/A</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-2">Nível</label>
+              <select id="editNivel" class="w-full px-4 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
+                <option value="1/4">1/4</option>
+                <option value="2/4">2/4</option>
+                <option value="3/4">3/4</option>
+                <option value="Cheio">Cheio</option>
+                <option value="N/A">N/A</option>
+              </select>
+            </div>
+          </div>
+          <div class="grid grid-cols-3 gap-4">
+            <div>
+              <label class="block text-sm font-medium mb-2">Fornecedor</label>
+              <select id="editFornecedor" class="w-full px-4 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
+                <option value="A GERADORA">A GERADORA</option>
+                <option value="ALCON">ALCON</option>
+                <option value="REDEL">REDEL</option>
+                <option value="VALE">VALE</option>
+                <option value="INFRATECH">INFRATECH</option>
+                <option value="N/A">N/A</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-2">Tipo Chassis</label>
+              <select id="editTipoChassis" class="w-full px-4 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
+                <option value="FIXO">FIXO</option>
+                <option value="MOVEL">MÓVEL</option>
+                <option value="N/A">N/A</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-2">Localização</label>
+              <select id="editDentroMina" class="w-full px-4 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
+                <option value="true">Dentro da Mina</option>
+                <option value="false">Fora da Mina</option>
+              </select>
+            </div>
+          </div>
+          <div class="flex gap-3 pt-4">
+            <button type="button" onclick="closeModal()" class="flex-1 px-4 py-2 rounded-xl bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 transition-all font-medium">Cancelar</button>
+            <button type="submit" class="flex-1 px-4 py-2 rounded-xl bg-primary-600 hover:bg-primary-700 text-white font-medium transition-all">Salvar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Login Modal -->
+  <div id="loginModal" class="hidden fixed inset-0 z-50 overflow-y-auto">
+    <div class="flex items-center justify-center min-h-screen px-4">
+      <div class="fixed inset-0 bg-slate-900/75 backdrop-blur-sm" onclick="closeLoginModal()"></div>
+      <div class="relative bg-white dark:bg-slate-900 rounded-2xl shadow-2xl p-8 max-w-md w-full border border-slate-200 dark:border-slate-800">
+        <h3 class="text-2xl font-bold text-center mb-6 text-slate-800 dark:text-white">Login Admin</h3>
+        <form onsubmit="handleLogin(event)" class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium mb-2">Usuário</label>
+            <input type="text" id="loginUser" class="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800" required>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-2">Senha</label>
+            <input type="password" id="loginPass" class="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800" required>
+          </div>
+          <div class="flex gap-3 pt-2">
+            <button type="button" onclick="closeLoginModal()" class="flex-1 px-4 py-2 rounded-xl bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 transition-all">Cancelar</button>
+            <button type="submit" class="flex-1 px-4 py-2 rounded-xl bg-primary-600 hover:bg-primary-700 text-white font-medium">Entrar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { loadGeradores, initRealtimeSync, subscribeGeradores } from './src/firebase.js';
+    import * as App from './src/app.js';
+    import { exportData, importData, saveRecord as handleSaveRecord } from './src/utils.js';
+
+    window.appState = { geradores: [] };
+    window.toggleTheme = App.toggleTheme;
+    window.toggleAdmin = App.toggleAdmin;
+    window.handleLogin = App.handleLogin;
+    window.closeLoginModal = App.closeLoginModal;
+    window.renderCards = App.renderCards;
+    window.updateStats = App.updateStats;
+    window.initCharts = App.initCharts;
+    window.getFilters = App.getFilters;
+    window.applyFilters = App.applyFilters;
+    window.clearFilters = App.clearFilters;
+    window.filterByStatus = App.filterByStatus;
+    window.filterByAuto = App.filterByAuto;
+    window.editRecord = App.editRecord;
+    window.openModal = App.openModal;
+    window.closeModal = App.closeModal;
+    window.handleSaveRecord = handleSaveRecord;
+    window.subscribeGeradores = subscribeGeradores;
+    window.exportData = exportData;
+    window.importData = (e) => importData(e, (data) => {
+      window.appState.geradores = data;
+      window.renderCards();
+      window.updateStats();
+    });
+
+    App.initApp();
+
+    async function init() {
+      try {
+        window.appState.geradores = await loadGeradores();
+        
+        window.subscribeGeradores((data) => {
+          window.appState.geradores = data;
+          window.renderCards();
+          window.updateStats();
+          document.getElementById('syncStatus').innerHTML = '<i class="fas fa-circle text-xs"></i> Sincronizado';
+        });
+        
+        await initRealtimeSync();
+
+        window.renderCards();
+        window.updateStats();
+        window.initCharts();
+      } catch (error) {
+        console.error('Erro ao inicializar:', error);
+      } finally {
+        document.getElementById('loading').style.display = 'none';
+      }
+    }
+
+    // Registra Service Worker
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js').catch(console.error);
+    }
+
+    init();
+  </script>
+</body>
+</html>
