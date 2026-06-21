@@ -20,8 +20,8 @@ Sistema de gerenciamento de geradores para a operação de Carajás-PA.
 
 ## Credenciais Admin
 
-- Usuário: `admin`
-- Senha: `admin`
+- Usuário: `------`
+- Senha: `--------`
 
 ## Segurança das Chaves
 
